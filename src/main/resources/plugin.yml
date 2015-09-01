@@ -1,0 +1,7 @@
+name: SlackChatBungee
+main: net.cubexmc.SlackChatBungee.Main
+description: Slack hook for Minecraft. By PantherMan594. (c) CubeXMC Network
+version: #VERSION#
+author: PantherMan594
+softdepends:
+- BungeeEssentials
