@@ -1,8 +1,8 @@
 package net.cubexmc.SlackChatBungee;
 
-import de.albionco.gssentials.event.GlobalChatEvent;
-import de.albionco.gssentials.event.StaffChatEvent;
-import de.albionco.gssentials.utils.Messenger;
+import com.pantherman594.gssentials.event.GlobalChatEvent;
+import com.pantherman594.gssentials.event.StaffChatEvent;
+import com.pantherman594.gssentials.utils.Messenger;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -33,9 +33,9 @@ import java.util.logging.Logger;
 
 public class Main extends Plugin implements Listener {
 
-    public final Logger logger = Logger.getLogger("Minecraft");
     public static ServerSocket serverSocket;
     public static DefaultHttpServerConnection conn;
+    public final Logger logger = Logger.getLogger("Minecraft");
     public HttpParams params = new BasicHttpParams();
     public HttpRequest request;
     public HttpClient httpClient;
