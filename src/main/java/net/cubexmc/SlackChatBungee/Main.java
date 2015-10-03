@@ -84,7 +84,7 @@ public class Main extends Plugin implements Listener {
                                             }
                                         }
                                         if (!found) {
-                                            ProxyServer.getInstance().getLogger().log(Level.WARNING, "Invalid channel name received: " + channel);
+                                            ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
                                         }
                                         break;
                                 }
@@ -118,37 +118,50 @@ public class Main extends Plugin implements Listener {
                 }
             }
         }, 0, TimeUnit.SECONDS);
+        ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
+            @Override
+            public void run() {
+                if (java.time.LocalTime.now().equals(java.time.LocalTime.of(16, 0)) && java.time.LocalTime.now().getSecond() <= 15) {
+                    postPayload("Vote now at http://cubexmc.net/?a=vote!", "Vote", "@slackbot", false);
+                }
+            }
+        }, 15, TimeUnit.SECONDS);
     }
 
     @EventHandler
     public void onStaffChat(StaffChatEvent event) {
-        if (!event.getServer().equals("SLACK")) postPayload(event.getMessage(), event.getSender(), "staffchat");
+        if (!event.getServer().equals("SLACK")) {
+            if (event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking (")) {
+                postPayload(event.getMessage(), "[AAC]", "#hackreports", false);
+            }
+            postPayload(event.getMessage(), event.getSender(), "#staffchat");
+        }
     }
 
     @EventHandler
     public void onGlobalChat(GlobalChatEvent event) {
-        if (!event.getServer().equals("SLACK")) postPayload(event.getMessage(), event.getSender(), "globalchat");
+        if (!event.getServer().equals("SLACK")) postPayload(event.getMessage(), event.getSender(), "#globalchat");
     }
 
     @EventHandler
     public void onPlayerJoin(PostLoginEvent event) {
-        postPayload("_joined the game_", event.getPlayer().getName(), "globalchat");
+        postPayload("_joined the game_", event.getPlayer().getName(), "#globalchat");
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerDisconnectEvent event) {
-        postPayload("_left the game_", event.getPlayer().getName(), "globalchat");
+        postPayload("_left the game_", event.getPlayer().getName(), "#globalchat");
     }
 
     @EventHandler
     public void onServerSwitch(ServerSwitchEvent event) {
-        postPayload("_switched to " + event.getPlayer().getServer().getInfo().getName() + "_", event.getPlayer().getName(), "globalchat");
+        postPayload("_switched to " + event.getPlayer().getServer().getInfo().getName() + "_", event.getPlayer().getName(), "#globalchat");
     }
 
     @EventHandler
     public void onPlayerChat(ChatEvent event) {
         ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
-        postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
+        postPayload(event.getMessage(), sender.getName(), "#" + sender.getServer().getInfo().getName());
     }
 
     @Override
@@ -209,12 +222,20 @@ public class Main extends Plugin implements Listener {
     }
 
     public void postPayload(String msg, String player, String serverName) {
+        postPayload(msg, player, serverName, true);
+    }
+
+    public void postPayload(String msg, String player, String serverName, boolean icon) {
         httpClient = HttpClientBuilder.create().build();
         msg = msg.replace("\"", "\\\"");
         try {
             HttpPost request = new HttpPost("https://hooks.slack.com/services/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");
             StringEntity params;
-            params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"https://cravatar.eu/helmavatar/" + player + "/100.png\", \"text\": \"" + msg + "\"}");
+            if (icon) {
+                params = new StringEntity("payload={\"channel\": \"" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"https://cravatar.eu/helmavatar/" + player + "/100.png\", \"text\": \"" + msg + "\"}");
+            } else {
+                params = new StringEntity("payload={\"channel\": \"" + serverName + "\", \"username\": \"" + player + "\", \"text\": \"" + msg + "\"}");
+            }
             request.addHeader("content-type", "application/x-www-form-urlencoded");
             request.setEntity(params);
             httpClient.execute(request);
