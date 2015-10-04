@@ -133,8 +133,9 @@ public class Main extends Plugin implements Listener {
         if (!event.getServer().equals("SLACK")) {
             if (event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking (")) {
                 postPayload(event.getMessage(), "[AAC]", "#hackreports", false);
+            } else {
+                postPayload(event.getMessage(), event.getSender(), "#staffchat");
             }
-            postPayload(event.getMessage(), event.getSender(), "#staffchat");
         }
     }
 
