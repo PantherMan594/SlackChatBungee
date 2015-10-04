@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.cubexmc</groupId>
     <artifactId>SlackChatBungee</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
     <name>SlackChatBungee</name>
     <description>Slack hook for Minecraft. By PantherMan594. (c) CubeXMC Network.</description>
     <properties>
