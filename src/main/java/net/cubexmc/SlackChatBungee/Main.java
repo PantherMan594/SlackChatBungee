@@ -131,9 +131,7 @@ public class Main extends Plugin implements Listener {
     @EventHandler
     public void onStaffChat(StaffChatEvent event) {
         if (!event.getServer().equals("SLACK")) {
-            if (event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking (")) {
-                postPayload(event.getMessage(), "[AAC]", "#hackreports", false);
-            } else {
+            if (!(event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking ("))) {
                 postPayload(event.getMessage(), event.getSender(), "#staffchat");
             }
         }
