@@ -122,7 +122,7 @@ public class Main extends Plugin implements Listener {
             @Override
             public void run() {
                 if (java.time.LocalTime.now().equals(java.time.LocalTime.of(16, 0)) && java.time.LocalTime.now().getSecond() <= 15) {
-                    postPayload("Vote now at http://cubexmc.net/?a=vote!", "Vote", "@slackbot", false);
+                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote Reminder", "Vote now at http://cubexmc.net/?a=vote!"));
                 }
             }
         }, 15, TimeUnit.SECONDS);
@@ -132,35 +132,37 @@ public class Main extends Plugin implements Listener {
     public void onStaffChat(StaffChatEvent event) {
         if (!event.getServer().equals("SLACK")) {
             if (!(event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking ("))) {
-                postPayload(event.getMessage(), event.getSender(), "#staffchat");
+                postPayload(event.getMessage(), event.getSender(), "staffchat");
             }
+        } else if (event.getServer().equals("VOTE")) {
+            postPayload(event.getMessage(), event.getSender(), "staffchat", false);
         }
     }
 
     @EventHandler
     public void onGlobalChat(GlobalChatEvent event) {
-        if (!event.getServer().equals("SLACK")) postPayload(event.getMessage(), event.getSender(), "#globalchat");
+        if (!event.getServer().equals("SLACK")) postPayload(event.getMessage(), event.getSender(), "globalchat");
     }
 
     @EventHandler
     public void onPlayerJoin(PostLoginEvent event) {
-        postPayload("_joined the game_", event.getPlayer().getName(), "#globalchat");
+        postPayload("_joined the game_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerDisconnectEvent event) {
-        postPayload("_left the game_", event.getPlayer().getName(), "#globalchat");
+        postPayload("_left the game_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
     public void onServerSwitch(ServerSwitchEvent event) {
-        postPayload("_switched to " + event.getPlayer().getServer().getInfo().getName() + "_", event.getPlayer().getName(), "#globalchat");
+        postPayload("_switched to " + event.getPlayer().getServer().getInfo().getName() + "_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
     public void onPlayerChat(ChatEvent event) {
         ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
-        postPayload(event.getMessage(), sender.getName(), "#" + sender.getServer().getInfo().getName());
+        postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
     }
 
     @Override
@@ -174,15 +176,16 @@ public class Main extends Plugin implements Listener {
 
     public String getList(String serverName) {
         String players = "";
-        if (serverName.equalsIgnoreCase("staffchat") || serverName.equalsIgnoreCase("globalchat")) {
+        boolean found = false;
+        for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
+            if (!found && info.getName().equalsIgnoreCase(serverName)) {
+                players += "\n" + getPlayerList(info.getName());
+                found = true;
+            }
+        }
+        if (!found) {
             for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
                 players += "\n" + getPlayerList(info.getName());
-            }
-        } else {
-            for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
-                if (info.getName().equalsIgnoreCase(serverName)) {
-                    players += "\n" + getPlayerList(info.getName());
-                }
             }
         }
         return players;
@@ -231,9 +234,9 @@ public class Main extends Plugin implements Listener {
             HttpPost request = new HttpPost("https://hooks.slack.com/services/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");
             StringEntity params;
             if (icon) {
-                params = new StringEntity("payload={\"channel\": \"" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"https://cravatar.eu/helmavatar/" + player + "/100.png\", \"text\": \"" + msg + "\"}");
+                params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"https://cravatar.eu/helmavatar/" + player + "/100.png\", \"text\": \"" + msg + "\"}");
             } else {
-                params = new StringEntity("payload={\"channel\": \"" + serverName + "\", \"username\": \"" + player + "\", \"text\": \"" + msg + "\"}");
+                params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"text\": \"" + msg + "\"}");
             }
             request.addHeader("content-type", "application/x-www-form-urlencoded");
             request.setEntity(params);
