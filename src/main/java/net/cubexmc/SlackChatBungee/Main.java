@@ -13,6 +13,9 @@ import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.event.EventHandler;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
@@ -25,17 +28,19 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Main extends Plugin implements Listener {
 
     public static ServerSocket serverSocket;
     public static DefaultHttpServerConnection conn;
-    public final Logger logger = Logger.getLogger("Minecraft");
     public HttpParams params = new BasicHttpParams();
     public HttpRequest request;
     public HttpClient httpClient;
@@ -46,7 +51,7 @@ public class Main extends Plugin implements Listener {
         try {
             int port = 25464;
             serverSocket = new ServerSocket(port);
-            logger.info("[SlackChat] Connected to port " + port);
+            getLogger().info("[SlackChat] Connected to port " + port);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -91,12 +96,7 @@ public class Main extends Plugin implements Listener {
                                 ProxyServer.getInstance().getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + user + ": " + message);
                             }
                         } else {
-                            String channel = tokens[4].replace("channel_name=", "");
-                            if (tokens[8].equals("text=")) {
-                                result = getList(channel);
-                            } else {
-                                result = getList(tokens[8].replace("text=", ""));
-                            }
+                            result = getList();
                         }
                         HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, 200, "OK");
                         if (result.equals("")) {
@@ -147,11 +147,13 @@ public class Main extends Plugin implements Listener {
     @EventHandler
     public void onPlayerJoin(PostLoginEvent event) {
         postPayload("_joined the game_", event.getPlayer().getName(), "globalchat");
+        logAttendance(event.getPlayer().getName(), "1");
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerDisconnectEvent event) {
         postPayload("_left the game_", event.getPlayer().getName(), "globalchat");
+        logAttendance(event.getPlayer().getName(), "0");
     }
 
     @EventHandler
@@ -174,19 +176,10 @@ public class Main extends Plugin implements Listener {
         }
     }
 
-    public String getList(String serverName) {
+    public String getList() {
         String players = "";
-        boolean found = false;
         for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
-            if (!found && info.getName().equalsIgnoreCase(serverName)) {
-                players += "\n" + getPlayerList(info.getName());
-                found = true;
-            }
-        }
-        if (!found) {
-            for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
-                players += "\n" + getPlayerList(info.getName());
-            }
+            players += "\n" + getPlayerList(info.getName());
         }
         return players;
     }
@@ -214,6 +207,44 @@ public class Main extends Plugin implements Listener {
             return serverName + " " + "(" + num + ")" + ": " +  names;
         } else {
             return serverName + ": " + num;
+        }
+    }
+
+    public void logAttendance(String name, String IO) {
+        try {
+            if (!getDataFolder().exists()) {
+                if (!getDataFolder().mkdir()) {
+                    getLogger().log(Level.WARNING, "Unable to create config folder!");
+                }
+            }
+            File f = new File(getDataFolder(), "config.yml");
+            if (!f.exists()) {
+                Files.copy(getResourceAsStream("config.yml"), f.toPath());
+            }
+            Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
+            List<String> staffList = config.getStringList("staff");
+            boolean match = false;
+            for (String staff : staffList) {
+                if (name.equalsIgnoreCase(staff) && !match) {
+                    String form = "126NnT3lEnaHUBD-mEICj0ereHJ3lIioFI2F2OsUqXC4";
+                    String month = "" + LocalDateTime.now().getMonthValue();
+                    String day = "" + LocalDateTime.now().getDayOfMonth();
+                    String year = "" + LocalDateTime.now().getYear();
+                    String hour = "" + LocalDateTime.now().getHour();
+                    String minute = "" + LocalDateTime.now().getMinute();
+                    runCommand("curl 'https://docs.google.com/forms/d/" + form + "/formResponse' " +
+                            "-H 'Host: docs.google.com' -H 'User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' " +
+                            "-H 'Accept-Language: nl,en-us;q=0.7,en;q=0.3' -H 'Accept-Encoding: gzip, deflate' -H 'DNT: 1' " +
+                            "-H 'Referer: https://docs.google.com/forms/d/" + form + "/viewform' " +
+                            "-H 'Cookie: GDS_PREF=hl=en_US; __utma=184632636.34...1517515.2; PREF=ID=4922e3....:FF=0:LD=nl:TM=1380883655:LM=1381731571:S=JvyU_OhlkQ7rE3x3; NID=67=hy29...sglz4PVeS53BZ4eLkYK_wDm9-jmdj7apqNZv6rEwUPDobxjagtLN5gpl4A7v0oA' " +
+                            "-H 'Connection: keep-alive' " +
+                            "-H 'Content-Type: application/x-www-form-urlencoded' " +
+                            "--data 'entry.324043662='" + name + "'&entry.1069936891='" + IO + "'&entry.1717374858='" + month + "'&entry.555297325='" + day + "'&entry.1020866769='" + year + "'&entry.1208667130='" + hour + "'&entry.2011924973='" + minute + "'&draftResponse=%5B%5D%0D%0A&pageHistory=0&fbzx=-5804634750901421753'");
+                    match = true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -247,4 +278,36 @@ public class Main extends Plugin implements Listener {
         }
     }
 
+    public void runCommand(final String command) {
+        final Plugin plugin = this;
+        ProxyServer.getInstance().getScheduler().runAsync(plugin, new Runnable() {
+            @Override
+            public void run() {
+                File wd = new File("/bin");
+                Process proc = null;
+                try {
+                    proc = Runtime.getRuntime().exec("/bin/bash", null, wd);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (proc != null) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                    PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(proc.getOutputStream())), true);
+                    out.println(command);
+                    try {
+                        String line;
+                        while ((line = in.readLine()) != null) {
+                            getLogger().info(line);
+                        }
+                        proc.waitFor();
+                        in.close();
+                        out.close();
+                        proc.destroy();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
 }
