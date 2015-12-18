@@ -33,9 +33,9 @@ import java.net.ServerSocket;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 public class Main extends Plugin implements Listener {
 
@@ -67,41 +67,55 @@ public class Main extends Plugin implements Listener {
                         HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
                         String data = EntityUtils.toString(entity);
                         String[] tokens = data.split("&");
-                        String result = "";
-                        if (tokens[8].contains("user_name=")) {
-                            String channel = tokens[5].replace("channel_name=", "");
-                            String user = tokens[8].replace("user_name=", "");
-                            if (!user.equals("slackbot")) {
-                                String message = URLDecoder.decode(tokens[9].replace("text=", "").replace("+", " "), "UTF-8").replace("&amp;", "").replace("&lt;", "<").replace("&gt;", ">").replaceAll("(<(?=https?:\\/\\/[^\\|]+))|(\\|[^>]+>)", "");
-                                switch (channel) {
-                                    case "staffchat":
-                                        ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
-                                        break;
-                                    case "globalchat":
-                                        ProxyServer.getInstance().getPluginManager().callEvent(new GlobalChatEvent("SLACK", user, message));
-                                        break;
-                                    default:
-                                        boolean found = false;
-                                        for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
-                                            if (info.getName().equalsIgnoreCase(channel)) {
-                                                broadcastServer(message, user, info.getName());
-                                                found = true;
-                                            }
+                        String result = "Got it";
+                        getLogger().info(Arrays.toString(tokens));
+                        if (tokens[7].contains("command=%2Fsay")) {
+                            String channel = tokens[4].replace("channel_name=", "");
+                            String user = tokens[6].replace("user_name=", "");
+                            String message = decodeMessage(tokens[8]);
+                            boolean found = true;
+                            switch (channel) {
+                                case "staffchat":
+                                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
+                                    break;
+                                case "globalchat":
+                                    ProxyServer.getInstance().getPluginManager().callEvent(new GlobalChatEvent("SLACK", user, message));
+                                    break;
+                                case "privategroup":
+                                    String channelId = tokens[3].replace("channel_id=", "");
+                                    if (!getDataFolder().exists()) {
+                                        if (!getDataFolder().mkdir()) {
+                                            getLogger().warning("Unable to create config folder!");
                                         }
-                                        if (!found) {
-                                            ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
+                                    }
+                                    File f = new File(getDataFolder(), "config.yml");
+                                    if (!f.exists()) {
+                                        Files.copy(getResourceAsStream("config.yml"), f.toPath());
+                                    }
+                                    Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
+                                    channel = config.getString(channelId);
+                                default:
+                                    found = false;
+                                    for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
+                                        if (info.getName().equalsIgnoreCase(channel)) {
+                                            broadcastServer(message, user, info.getName());
+                                            postPayload(message, user, info.getName());
+                                            found = true;
+                                            break;
                                         }
-                                        break;
-                                }
-                                ProxyServer.getInstance().getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + user + ": " + message);
+                                    }
+                                    break;
                             }
-                        } else {
+                            if (!found) {
+                                ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
+                            }
+                            getLogger().info("[SLACK - " + channel + "] " + user + ": " + message);
+                            result = "";
+                        } else if (tokens[7].contains("command=%2Flist")) {
                             result = getList();
                         }
                         HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, 200, "OK");
-                        if (result.equals("")) {
-                            response.setEntity(new StringEntity("Got it"));
-                        } else {
+                        if (!result.equals("")) {
                             response.setEntity(new StringEntity(result));
                         }
                         conn.sendResponseHeader(response);
@@ -121,27 +135,27 @@ public class Main extends Plugin implements Listener {
         ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
             @Override
             public void run() {
-                if (java.time.LocalTime.now().equals(java.time.LocalTime.of(16, 0)) && java.time.LocalTime.now().getSecond() <= 15) {
-                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote Reminder", "Vote now at http://cubexmc.net/?a=vote!"));
+                if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0 && java.time.LocalTime.now().getSecond() <= 15) {
+                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "<!everyone> Vote now at http://cubexmc.net/?a=vote!"));
                 }
             }
-        }, 15, TimeUnit.SECONDS);
+        }, 0, 15, TimeUnit.SECONDS);
     }
 
     @EventHandler
     public void onStaffChat(StaffChatEvent event) {
-        if (!event.getServer().equals("SLACK")) {
+        if (!event.getServer().equals("VOTE")) {
             if (!(event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking ("))) {
                 postPayload(event.getMessage(), event.getSender(), "staffchat");
             }
-        } else if (event.getServer().equals("VOTE")) {
+        } else {
             postPayload(event.getMessage(), event.getSender(), "staffchat", false);
         }
     }
 
     @EventHandler
     public void onGlobalChat(GlobalChatEvent event) {
-        if (!event.getServer().equals("SLACK")) postPayload(event.getMessage(), event.getSender(), "globalchat");
+        postPayload(event.getMessage(), event.getSender(), "globalchat");
     }
 
     @EventHandler
@@ -214,7 +228,7 @@ public class Main extends Plugin implements Listener {
         try {
             if (!getDataFolder().exists()) {
                 if (!getDataFolder().mkdir()) {
-                    getLogger().log(Level.WARNING, "Unable to create config folder!");
+                    getLogger().warning("Unable to create config folder!");
                 }
             }
             File f = new File(getDataFolder(), "config.yml");
@@ -276,6 +290,12 @@ public class Main extends Plugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public String decodeMessage(String message) throws UnsupportedEncodingException {
+        return URLDecoder.decode(message.replace("text=", "").replace("+", " "), "UTF-8")
+                .replace("&amp;", "").replace("&lt;", "<").replace("&gt;", ">")
+                .replaceFirst("(<(?=https?://[^\\|]+))|(\\|[^>]+>)", "");
     }
 
     public void runCommand(final String command) {
