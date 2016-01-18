@@ -1,8 +1,9 @@
 package net.cubexmc.SlackChatBungee;
 
+import com.pantherman594.gssentials.BungeeEssentials;
 import com.pantherman594.gssentials.event.GlobalChatEvent;
 import com.pantherman594.gssentials.event.StaffChatEvent;
-import com.pantherman594.gssentials.utils.Messenger;
+import com.pantherman594.gssentials.utils.PlayerData;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -139,7 +140,7 @@ public class Main extends Plugin implements Listener {
                     ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "<!everyone> Vote now at http://cubexmc.net/?a=vote!"));
                 }
             }
-        }, 0, 15, TimeUnit.SECONDS);
+        }, 15, TimeUnit.SECONDS);
     }
 
     @EventHandler
@@ -204,12 +205,12 @@ public class Main extends Plugin implements Listener {
         int num = 0;
         ServerInfo info = ProxyServer.getInstance().getServerInfo(serverName);
         if (!info.getPlayers().isEmpty()) {
-            for (ProxiedPlayer player : info.getPlayers()) {
-                if (!Messenger.isHidden(player)) {
+            for (PlayerData pD : BungeeEssentials.getInstance().getDatas().values()) {
+                if (!pD.isHidden()) {
                     if (names.equals("")) {
-                        names += player.getName();
+                        names += pD.getName();
                     } else {
-                        names += ", " + player.getName();
+                        names += ", " + pD.getName();
                     }
                     num++;
                 }
@@ -315,10 +316,6 @@ public class Main extends Plugin implements Listener {
                     PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(proc.getOutputStream())), true);
                     out.println(command);
                     try {
-                        String line;
-                        while ((line = in.readLine()) != null) {
-                            getLogger().info(line);
-                        }
                         proc.waitFor();
                         in.close();
                         out.close();
