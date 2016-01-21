@@ -1,8 +1,8 @@
 package net.cubexmc.SlackChatBungee;
 
-import com.pantherman594.gssentials.BungeeEssentials;
 import com.pantherman594.gssentials.event.GlobalChatEvent;
 import com.pantherman594.gssentials.event.StaffChatEvent;
+import com.pantherman594.gssentials.utils.PlayerData;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -210,7 +210,7 @@ public class Main extends Plugin implements Listener {
                 } else {
                     names += ", " + p.getName();
                 }
-                if (BungeeEssentials.getInstance().getData(p.getUniqueId()).isHidden()) {
+                if (PlayerData.getData(p.getUniqueId()).isHidden()) {
                     names += "[Hidden]";
                 }
                 num++;
