@@ -30,6 +30,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
@@ -203,6 +204,13 @@ public class Main extends Plugin implements Listener {
         String names = "";
         int num = 0;
         ServerInfo info = ProxyServer.getInstance().getServerInfo(serverName);
+        try {
+            Socket s = new Socket();
+            s.connect(info.getAddress());
+            s.close();
+        } catch (IOException e) {
+            return serverName + ": Offline";
+        }
         if (!info.getPlayers().isEmpty()) {
             for (ProxiedPlayer p : info.getPlayers()) {
                 if (names.equals("")) {
