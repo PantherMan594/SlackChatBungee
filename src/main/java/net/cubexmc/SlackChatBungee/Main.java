@@ -133,14 +133,7 @@ public class Main extends Plugin implements Listener {
                 }
             }
         }, 0, TimeUnit.SECONDS);
-        ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
-            @Override
-            public void run() {
-                if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0 && java.time.LocalTime.now().getSecond() <= 15) {
-                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "<!everyone> Vote now at http://cubexmc.net/?a=vote!"));
-                }
-            }
-        }, 15, TimeUnit.SECONDS);
+        scheduleVote(false);
     }
 
     @EventHandler
@@ -189,6 +182,22 @@ public class Main extends Plugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void scheduleVote(final boolean done) {
+        ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
+            @Override
+            public void run() {
+                if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0) {
+                    if (!done) {
+                        ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "<!everyone> Vote now at http://cubexmc.net/?a=vote!"));
+                    }
+                    scheduleVote(true);
+                } else {
+                    scheduleVote(false);
+                }
+            }
+        }, 15, TimeUnit.SECONDS);
     }
 
     public String getList() {
