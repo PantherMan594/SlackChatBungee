@@ -1,8 +1,8 @@
 package net.cubexmc.SlackChatBungee;
 
+import com.pantherman594.gssentials.PlayerData;
 import com.pantherman594.gssentials.event.GlobalChatEvent;
 import com.pantherman594.gssentials.event.StaffChatEvent;
-import com.pantherman594.gssentials.utils.PlayerData;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -292,7 +292,7 @@ public class Main extends Plugin implements Listener {
 
     public void postPayload(String msg, String player, String serverName, boolean icon) {
         httpClient = HttpClientBuilder.create().build();
-        msg = msg.replace("\"", "\\\"");
+        msg = msg.replace("\"", "\\\"").replace("&", "%26");
         try {
             HttpPost request = new HttpPost("https://hooks.slack.com/services/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");
             StringEntity params;
