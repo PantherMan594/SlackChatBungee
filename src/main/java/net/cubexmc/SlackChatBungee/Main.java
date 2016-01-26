@@ -1,5 +1,6 @@
 package net.cubexmc.SlackChatBungee;
 
+import com.google.common.base.Joiner;
 import com.pantherman594.gssentials.PlayerData;
 import com.pantherman594.gssentials.event.GlobalChatEvent;
 import com.pantherman594.gssentials.event.StaffChatEvent;
@@ -190,7 +191,7 @@ public class Main extends Plugin implements Listener {
             public void run() {
                 if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0) {
                     if (!done) {
-                        ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "<!everyone> Vote now at http://cubexmc.net/?a=vote!"));
+                        ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "@everyone Vote now at http://cubexmc.net/?a=vote!"));
                     }
                     scheduleVote(true);
                 } else {
@@ -243,46 +244,54 @@ public class Main extends Plugin implements Listener {
     }
 
     public void logAttendance(String name, String IO) {
-        try {
-            if (!getDataFolder().exists()) {
-                if (!getDataFolder().mkdir()) {
-                    getLogger().warning("Unable to create config folder!");
-                }
-            }
-            File f = new File(getDataFolder(), "config.yml");
-            if (!f.exists()) {
-                Files.copy(getResourceAsStream("config.yml"), f.toPath());
-            }
-            Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
-            List<String> staffList = config.getStringList("staff");
-            boolean match = false;
-            for (String staff : staffList) {
-                if (name.equalsIgnoreCase(staff) && !match) {
-                    String form = "126NnT3lEnaHUBD-mEICj0ereHJ3lIioFI2F2OsUqXC4";
-                    String month = "" + LocalDateTime.now().getMonthValue();
-                    String day = "" + LocalDateTime.now().getDayOfMonth();
-                    String year = "" + LocalDateTime.now().getYear();
-                    String hour = "" + LocalDateTime.now().getHour();
-                    String minute = "" + LocalDateTime.now().getMinute();
-                    runCommand("curl 'https://docs.google.com/forms/d/" + form + "/formResponse' " +
-                            "-H 'Host: docs.google.com' -H 'User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' " +
-                            "-H 'Accept-Language: nl,en-us;q=0.7,en;q=0.3' -H 'Accept-Encoding: gzip, deflate' -H 'DNT: 1' " +
-                            "-H 'Referer: https://docs.google.com/forms/d/" + form + "/viewform' " +
-                            "-H 'Cookie: GDS_PREF=hl=en_US; __utma=184632636.34...1517515.2; PREF=ID=4922e3....:FF=0:LD=nl:TM=1380883655:LM=1381731571:S=JvyU_OhlkQ7rE3x3; NID=67=hy29...sglz4PVeS53BZ4eLkYK_wDm9-jmdj7apqNZv6rEwUPDobxjagtLN5gpl4A7v0oA' " +
-                            "-H 'Connection: keep-alive' " +
-                            "-H 'Content-Type: application/x-www-form-urlencoded' " +
-                            "--data 'entry.324043662='" + name + "'&entry.1069936891='" + IO + "'&entry.1717374858='" + month + "'&entry.555297325='" + day + "'&entry.1020866769='" + year + "'&entry.1208667130='" + hour + "'&entry.2011924973='" + minute + "'&draftResponse=%5B%5D%0D%0A&pageHistory=0&fbzx=-5804634750901421753'");
-                    match = true;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (getConfig().getString(name.toLowerCase()) != null) {
+            String form = "126NnT3lEnaHUBD-mEICj0ereHJ3lIioFI2F2OsUqXC4";
+            String month = "" + LocalDateTime.now().getMonthValue();
+            String day = "" + LocalDateTime.now().getDayOfMonth();
+            String year = "" + LocalDateTime.now().getYear();
+            String hour = "" + LocalDateTime.now().getHour();
+            String minute = "" + LocalDateTime.now().getMinute();
+            runCommand("curl 'https://docs.google.com/forms/d/" + form + "/formResponse' " +
+                    "-H 'Host: docs.google.com' -H 'User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' " +
+                    "-H 'Accept-Language: nl,en-us;q=0.7,en;q=0.3' -H 'Accept-Encoding: gzip, deflate' -H 'DNT: 1' " +
+                    "-H 'Referer: https://docs.google.com/forms/d/" + form + "/viewform' " +
+                    "-H 'Cookie: GDS_PREF=hl=en_US; __utma=184632636.34...1517515.2; PREF=ID=4922e3....:FF=0:LD=nl:TM=1380883655:LM=1381731571:S=JvyU_OhlkQ7rE3x3; NID=67=hy29...sglz4PVeS53BZ4eLkYK_wDm9-jmdj7apqNZv6rEwUPDobxjagtLN5gpl4A7v0oA' " +
+                    "-H 'Connection: keep-alive' " +
+                    "-H 'Content-Type: application/x-www-form-urlencoded' " +
+                    "--data 'entry.324043662='" + name + "'&entry.1069936891='" + IO + "'&entry.1717374858='" + month + "'&entry.555297325='" + day + "'&entry.1020866769='" + year + "'&entry.1208667130='" + hour + "'&entry.2011924973='" + minute + "'&draftResponse=%5B%5D%0D%0A&pageHistory=0&fbzx=-5804634750901421753'");
         }
     }
 
     public void broadcastServer(String msg, String player, String serverName) {
         for (ProxiedPlayer p : ProxyServer.getInstance().getServerInfo(serverName).getPlayers()) {
-            p.sendMessage("[S] " + player + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg);
+            String tag = "";
+            String name = player;
+            switch (player) {
+                case "cux":
+                    tag = "" + ChatColor.GOLD + ChatColor.BOLD + "Owner";
+                    name = ChatColor.BLUE + "Cux";
+                    break;
+                case "jo_dan":
+                    tag = ChatColor.DARK_GREEN + "Builder";
+                    name = ChatColor.GREEN + "Jo_Dan";
+                    break;
+                case "sandwichoverdose":
+                    tag = "" + ChatColor.GOLD + ChatColor.BOLD + "Owner";
+                    name = "SandwichOverdose";
+                    break;
+                case "blitzkim2":
+                    tag = ChatColor.DARK_RED + "Admin";
+                    name = "Blitzkim2";
+                    break;
+                case "major_dork":
+                    tag = ChatColor.DARK_RED + "Admin";
+                    name = "Major_Dork";
+                    break;
+                case "joheinous":
+                    name = "Joheinous";
+                    break;
+            }
+            p.sendMessage(ChatColor.GRAY + "[S] " + ChatColor.DARK_GRAY + "[" + tag + ChatColor.DARK_GRAY + "] " + name + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg);
         }
     }
 
@@ -291,6 +300,25 @@ public class Main extends Plugin implements Listener {
     }
 
     public void postPayload(String msg, String player, String serverName, boolean icon) {
+        if (msg.contains(" ")) {
+            List<String> words = Arrays.asList(msg.split(" "));
+            int i = 0;
+            for (String word : words) {
+                if (word.startsWith("@")) {
+                    if (getConfig().getString(word.substring(1).toLowerCase()) != null) {
+                        words.set(i, "<" + getConfig().getString(word.substring(1).toLowerCase()) + ">");
+                    }
+                }
+                i++;
+            }
+            msg = Joiner.on(" ").join(words);
+        } else {
+            if (msg.startsWith("@")) {
+                if (getConfig().getString(msg.substring(1).toLowerCase()) != null) {
+                    msg = "<" + getConfig().getString(msg.substring(1).toLowerCase()) + ">";
+                }
+            }
+        }
         httpClient = HttpClientBuilder.create().build();
         msg = msg.replace("\"", "\\\"").replace("&", "%26");
         try {
@@ -314,6 +342,28 @@ public class Main extends Plugin implements Listener {
         return URLDecoder.decode(message.replace("text=", "").replace("+", " "), "UTF-8")
                 .replace("&amp;", "").replace("&lt;", "<").replace("&gt;", ">")
                 .replaceFirst("(<(?=https?://[^\\|]+))|(\\|[^>]+>)", "");
+    }
+
+    public Configuration getConfig() {
+        if (!getDataFolder().exists()) {
+            if (!getDataFolder().mkdir()) {
+                getLogger().warning("Unable to create config folder!");
+            }
+        }
+        File f = new File(getDataFolder(), "config.yml");
+        if (!f.exists()) {
+            try {
+                Files.copy(getResourceAsStream("config.yml"), f.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            return ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public void runCommand(final String command) {
