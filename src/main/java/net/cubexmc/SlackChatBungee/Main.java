@@ -244,7 +244,7 @@ public class Main extends Plugin implements Listener {
     }
 
     public void logAttendance(String name, String IO) {
-        if (getConfig().getString(name.toLowerCase()) != null) {
+        if (!getConfig().getString(name.toLowerCase()).equals("")) {
             String form = "126NnT3lEnaHUBD-mEICj0ereHJ3lIioFI2F2OsUqXC4";
             String month = "" + LocalDateTime.now().getMonthValue();
             String day = "" + LocalDateTime.now().getDayOfMonth();
@@ -305,7 +305,7 @@ public class Main extends Plugin implements Listener {
             int i = 0;
             for (String word : words) {
                 if (word.startsWith("@")) {
-                    if (getConfig().getString(word.substring(1).toLowerCase()) != null) {
+                    if (!getConfig().getString(word.substring(1).toLowerCase()).equals("")) {
                         words.set(i, "<" + getConfig().getString(word.substring(1).toLowerCase()) + ">");
                     }
                 }
@@ -314,7 +314,7 @@ public class Main extends Plugin implements Listener {
             msg = Joiner.on(" ").join(words);
         } else {
             if (msg.startsWith("@")) {
-                if (getConfig().getString(msg.substring(1).toLowerCase()) != null) {
+                if (!getConfig().getString(msg.substring(1).toLowerCase()).equals("")) {
                     msg = "<" + getConfig().getString(msg.substring(1).toLowerCase()) + ">";
                 }
             }
