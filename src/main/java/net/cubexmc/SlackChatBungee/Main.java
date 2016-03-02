@@ -113,6 +113,9 @@ public class Main extends Plugin implements Listener {
                             }
                             getLogger().info("[SLACK - " + channel + "] " + user + ": " + message);
                             result = "";
+                        } else if (tokens[7].contains("command=%2Frun") && tokens[6].replace("user_name=", "").equalsIgnoreCase("Cux")) {
+                            ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
+                            result = "Ran command " + decodeMessage(tokens[8]);
                         } else if (tokens[7].contains("command=%2Flist")) {
                             result = getList();
                         }
