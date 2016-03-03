@@ -38,6 +38,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class Main extends Plugin implements Listener {
 
@@ -53,7 +54,7 @@ public class Main extends Plugin implements Listener {
         try {
             int port = 25464;
             serverSocket = new ServerSocket(port);
-            getLogger().info("[SlackChat] Connected to port " + port);
+            getLogger().log(Level.INFO, "[SlackChat] Connected to port " + port);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -70,7 +71,6 @@ public class Main extends Plugin implements Listener {
                         String data = EntityUtils.toString(entity);
                         String[] tokens = data.split("&");
                         String result = "Got it";
-                        getLogger().info(Arrays.toString(tokens));
                         if (tokens[7].contains("command=%2Fsay")) {
                             String channel = tokens[4].replace("channel_name=", "");
                             String user = tokens[6].replace("user_name=", "");
@@ -111,13 +111,14 @@ public class Main extends Plugin implements Listener {
                             if (!found) {
                                 ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
                             }
-                            getLogger().info("[SLACK - " + channel + "] " + user + ": " + message);
+                            getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + user + ": " + message);
                             result = "";
                         } else if (tokens[7].contains("command=%2Frun") && tokens[6].replace("user_name=", "").equalsIgnoreCase("Cux")) {
                             ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
-                            result = "Ran command " + decodeMessage(tokens[8]);
-                        } else if (tokens[7].contains("command=%2log")) {
-                            result = tail(new File(ProxyServer.getInstance().getPluginsFolder().getParent(), "proxy.log.0"), 10);
+                            result = "Ran command /" + decodeMessage(tokens[8]);
+                        } else if (tokens[7].contains("command=%2Flog")) {
+                            int lines = isInteger(decodeMessage(tokens[8]), 10) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
+                            result = tail(new File(ProxyServer.getInstance().getPluginsFolder().getParent(), "proxy.log.0"), lines);
                         } else if (tokens[7].contains("command=%2Flist")) {
                             result = getList();
                         }
@@ -128,6 +129,7 @@ public class Main extends Plugin implements Listener {
                         conn.sendResponseHeader(response);
                         conn.sendResponseEntity(response);
                         conn.close();
+                        getLogger().log(Level.CONFIG, Arrays.toString(tokens));
                     } catch (Exception e) {
                         try {
                             e.printStackTrace();
@@ -443,5 +445,17 @@ public class Main extends Plugin implements Listener {
                 }
             }
         }
+    }
+
+    public boolean isInteger(String s, int radix) {
+        if (s.isEmpty()) return false;
+        for (int i = 0; i < s.length(); i++) {
+            if (i == 0 && s.charAt(i) == '-') {
+                if (s.length() == 1) return false;
+                else continue;
+            }
+            if (Character.digit(s.charAt(i), radix) < 0) return false;
+        }
+        return true;
     }
 }
