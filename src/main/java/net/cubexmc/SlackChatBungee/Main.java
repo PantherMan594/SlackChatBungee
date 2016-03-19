@@ -42,13 +42,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
-public class Main extends Plugin implements Listener {
+class Main extends Plugin implements Listener {
 
-    public static ServerSocket serverSocket;
-    public static DefaultHttpServerConnection conn;
-    public HttpParams params = new BasicHttpParams();
-    public HttpRequest request;
-    public HttpClient httpClient;
+    private static ServerSocket serverSocket;
+    private static DefaultHttpServerConnection conn;
+    private HttpParams params = new BasicHttpParams();
+    private HttpRequest request;
     private Configuration config;
 
     @Override
@@ -77,74 +76,72 @@ public class Main extends Plugin implements Listener {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
-            @Override
-            public void run() {
-                while (!serverSocket.isClosed()) {
-                    try {
-                        conn.bind(serverSocket.accept(), params);
-                        request = conn.receiveRequestHeader();
-                        conn.receiveRequestEntity((HttpEntityEnclosingRequest) request);
-                        HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                        String data = EntityUtils.toString(entity);
-                        String[] tokens = data.split("&");
-                        String result = "Got it";
-                        if (tokens[7].contains("command=%2Fsay")) {
-                            String channel = tokens[4].replace("channel_name=", "");
-                            String user = tokens[6].replace("user_name=", "");
-                            String message = decodeMessage(tokens[8]);
-                            boolean found = true;
-                            switch (channel) {
-                                case "staffchat":
-                                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
-                                    break;
-                                case "globalchat":
-                                    ProxyServer.getInstance().getPluginManager().callEvent(new GlobalChatEvent("SLACK", user, message));
-                                    break;
-                                case "privategroup":
-                                    String channelId = tokens[3].replace("channel_id=", "");
-                                    channel = config.getString(channelId + ".id");
-                                default:
-                                    found = false;
-                                    for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
-                                        if (info.getName().equalsIgnoreCase(channel)) {
-                                            broadcastServer(message, user, info.getName());
-                                            postPayload(message, user, info.getName());
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    break;
-                            }
-                            if (!found) {
+        ProxyServer.getInstance().getScheduler().schedule(this, () -> {
+            while (!serverSocket.isClosed()) {
+                try {
+                    conn.bind(serverSocket.accept(), params);
+                    request = conn.receiveRequestHeader();
+                    conn.receiveRequestEntity((HttpEntityEnclosingRequest) request);
+                    HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
+                    String data = EntityUtils.toString(entity);
+                    String[] tokens = data.split("&");
+                    String result = "Got it";
+                    if (tokens[7].contains("command=%2Fsay")) {
+                        String channel = tokens[4].replace("channel_name=", "");
+                        String user = tokens[6].replace("user_name=", "");
+                        String message = decodeMessage(tokens[8]);
+                        boolean found = true;
+                        switch (channel) {
+                            case "staffchat":
                                 ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
-                            }
-                            getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
-                            result = "";
-                        } else if (tokens[7].contains("command=%2Frun") && config.getString(tokens[6].replace("user_name=", "") + ".tag") != null && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
-                            ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
-                            result = "Ran command /" + decodeMessage(tokens[8]);
-                        } else if (tokens[7].contains("command=%2Flog") && !config.getString(tokens[6].replace("user_name=", "") + ".tag").equals("") && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
-                            int lines = isInteger(decodeMessage(tokens[8]), 10) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
-                            result = tail(new File(ProxyServer.getInstance().getPluginsFolder().getParent(), "proxy.log.0"), lines);
-                        } else if (tokens[7].contains("command=%2Flist")) {
-                            result = getList();
+                                break;
+                            case "globalchat":
+                                ProxyServer.getInstance().getPluginManager().callEvent(new GlobalChatEvent("SLACK", user, message));
+                                break;
+                            case "privategroup":
+                                String channelId = tokens[3].replace("channel_id=", "");
+                                channel = config.getString(channelId + ".id");
+                            default:
+                                found = false;
+                                for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
+                                    if (info.getName().equalsIgnoreCase(channel)) {
+                                        broadcastServer(message, user, info.getName());
+                                        postPayload(message, user, info.getName());
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                break;
                         }
-                        HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, 200, "OK");
-                        if (!result.equals("")) {
-                            response.setEntity(new StringEntity(result));
+                        if (!found) {
+                            ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
                         }
-                        conn.sendResponseHeader(response);
-                        conn.sendResponseEntity(response);
-                        conn.close();
-                        getLogger().log(Level.CONFIG, Arrays.toString(tokens));
-                    } catch (Exception e) {
-                        try {
-                            e.printStackTrace();
-                            if (conn.isOpen()) {
-                                conn.close();
-                            }
-                        } catch (Exception ignored) {}
+                        getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
+                        result = "";
+                    } else if (tokens[7].contains("command=%2Frun") && config.getString(tokens[6].replace("user_name=", "") + ".tag") != null && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
+                        ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
+                        result = "Ran command /" + decodeMessage(tokens[8]);
+                    } else if (tokens[7].contains("command=%2Flog") && !config.getString(tokens[6].replace("user_name=", "") + ".tag").equals("") && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
+                        int lines = isInteger(decodeMessage(tokens[8]), 10) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
+                        result = tail(new File(ProxyServer.getInstance().getPluginsFolder().getParent(), "proxy.log.0"), lines);
+                    } else if (tokens[7].contains("command=%2Flist")) {
+                        result = getList();
+                    }
+                    HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, 200, "OK");
+                    if (!result.equals("")) {
+                        response.setEntity(new StringEntity(result));
+                    }
+                    conn.sendResponseHeader(response);
+                    conn.sendResponseEntity(response);
+                    conn.close();
+                    getLogger().log(Level.CONFIG, Arrays.toString(tokens));
+                } catch (Exception e) {
+                    try {
+                        e.printStackTrace();
+                        if (conn.isOpen()) {
+                            conn.close();
+                        }
+                    } catch (Exception ignored) {
                     }
                 }
             }
@@ -153,7 +150,7 @@ public class Main extends Plugin implements Listener {
     }
 
     @EventHandler
-    public void onStaffChat(StaffChatEvent event) {
+    void onStaffChat(StaffChatEvent event) {
         if (!event.getServer().equals("VOTE")) {
             if (!(event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking ("))) {
                 postPayload(event.getMessage(), event.getSender(), "staffchat");
@@ -164,27 +161,27 @@ public class Main extends Plugin implements Listener {
     }
 
     @EventHandler
-    public void onGlobalChat(GlobalChatEvent event) {
+    void onGlobalChat(GlobalChatEvent event) {
         postPayload(event.getMessage(), event.getSender(), "globalchat");
     }
 
     @EventHandler
-    public void onPlayerJoin(PostLoginEvent event) {
+    void onPlayerJoin(PostLoginEvent event) {
         postPayload("_joined the game_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerDisconnectEvent event) {
+    void onPlayerQuit(PlayerDisconnectEvent event) {
         postPayload("_left the game_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
-    public void onServerSwitch(ServerSwitchEvent event) {
+    void onServerSwitch(ServerSwitchEvent event) {
         postPayload("_switched to " + event.getPlayer().getServer().getInfo().getName() + "_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
-    public void onPlayerChat(ChatEvent event) {
+    void onPlayerChat(ChatEvent event) {
         ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
         postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
     }
@@ -198,23 +195,20 @@ public class Main extends Plugin implements Listener {
         }
     }
 
-    public void scheduleVote(final boolean done) {
-        ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
-            @Override
-            public void run() {
-                if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0) {
-                    if (!done) {
-                        ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "@everyone Vote now at http://cubexmc.net/?a=vote!"));
-                    }
-                    scheduleVote(true);
-                } else {
-                    scheduleVote(false);
+    private void scheduleVote(final boolean done) {
+        ProxyServer.getInstance().getScheduler().schedule(this, () -> {
+            if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0) {
+                if (!done) {
+                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "@everyone Vote now at http://cubexmc.net/?a=vote!"));
                 }
+                scheduleVote(true);
+            } else {
+                scheduleVote(false);
             }
         }, 15, TimeUnit.SECONDS);
     }
 
-    public String getList() {
+    private String getList() {
         String players = "";
         for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
             players += "\n" + getPlayerList(info.getName());
@@ -222,7 +216,7 @@ public class Main extends Plugin implements Listener {
         return players;
     }
 
-    public String getPlayerList(String serverName) {
+    private String getPlayerList(String serverName) {
         boolean playerNames = true;
         String names = "";
         int num = 0;
@@ -256,21 +250,21 @@ public class Main extends Plugin implements Listener {
         }
     }
 
-    public String formatMsg(String msg, String player) {
+    private String formatMsg(String msg, String player) {
         return ChatColor.GRAY + "[S] " + ChatColor.translateAlternateColorCodes('&', config.getString(player.toLowerCase() + ".tag")) + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg;
     }
 
-    public void broadcastServer(String msg, String player, String serverName) {
+    private void broadcastServer(String msg, String player, String serverName) {
         for (ProxiedPlayer p : ProxyServer.getInstance().getServerInfo(serverName).getPlayers()) {
             p.sendMessage(formatMsg(msg, player));
         }
     }
 
-    public void postPayload(String msg, String player, String serverName) {
+    private void postPayload(String msg, String player, String serverName) {
         postPayload(msg, player, serverName, true);
     }
 
-    public void postPayload(String msg, String player, String serverName, boolean icon) {
+    private void postPayload(String msg, String player, String serverName, boolean icon) {
         if (msg.contains(" ")) {
             List<String> words = Arrays.asList(msg.split(" "));
             int i = 0;
@@ -290,7 +284,7 @@ public class Main extends Plugin implements Listener {
                 }
             }
         }
-        httpClient = HttpClientBuilder.create().build();
+        HttpClient httpClient = HttpClientBuilder.create().build();
         msg = msg.replace("\"", "\\\"").replace("&", "%26");
         try {
             HttpPost request = new HttpPost("https://hooks.slack.com/services/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");
@@ -309,13 +303,13 @@ public class Main extends Plugin implements Listener {
         }
     }
 
-    public String decodeMessage(String message) throws UnsupportedEncodingException {
+    private String decodeMessage(String message) throws UnsupportedEncodingException {
         return URLDecoder.decode(message.replace("text=", "").replace("+", " "), "UTF-8")
                 .replace("&amp;", "").replace("&lt;", "<").replace("&gt;", ">")
                 .replaceFirst("(<(?=https?://[^\\|]+))|(\\|[^>]+>)", "");
     }
 
-    public String tail(File file, int lines) {
+    private String tail(File file, int lines) {
         java.io.RandomAccessFile fileHandler = null;
         try {
             fileHandler =
@@ -360,7 +354,7 @@ public class Main extends Plugin implements Listener {
         }
     }
 
-    public boolean isInteger(String s, int radix) {
+    private boolean isInteger(String s, int radix) {
         if (s.isEmpty()) return false;
         for (int i = 0; i < s.length(); i++) {
             if (i == 0 && s.charAt(i) == '-') {

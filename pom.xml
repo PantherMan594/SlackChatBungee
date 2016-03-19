@@ -10,7 +10,7 @@
     <description>Slack hook for Minecraft. By PantherMan594. (c) CubeXMC Network.</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bungee.version>1.8-SNAPSHOT</bungee.version>
+        <bungee.version>1.9-SNAPSHOT</bungee.version>
     </properties>
     <build>
         <defaultGoal>clean package</defaultGoal>
@@ -21,8 +21,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
