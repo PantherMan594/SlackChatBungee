@@ -29,17 +29,19 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.file.Files;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class Main extends Plugin implements Listener {
 
     public static ServerSocket serverSocket;
@@ -47,6 +49,7 @@ public class Main extends Plugin implements Listener {
     public HttpParams params = new BasicHttpParams();
     public HttpRequest request;
     public HttpClient httpClient;
+    private Configuration config;
 
     @Override
     public void onEnable() {
@@ -59,6 +62,21 @@ public class Main extends Plugin implements Listener {
             e.printStackTrace();
         }
         conn = new DefaultHttpServerConnection();
+        if (!getDataFolder().exists()) {
+            if (!getDataFolder().mkdir()) {
+                getLogger().warning("Unable to create config folder!");
+            }
+        }
+        File f = new File(getDataFolder(), "config.yml");
+        try {
+            if (f.exists()) {
+                f.delete();
+            }
+            Files.copy(getResourceAsStream("config.yml"), f.toPath());
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
             @Override
             public void run() {
@@ -85,17 +103,7 @@ public class Main extends Plugin implements Listener {
                                     break;
                                 case "privategroup":
                                     String channelId = tokens[3].replace("channel_id=", "");
-                                    if (!getDataFolder().exists()) {
-                                        if (!getDataFolder().mkdir()) {
-                                            getLogger().warning("Unable to create config folder!");
-                                        }
-                                    }
-                                    File f = new File(getDataFolder(), "config.yml");
-                                    if (!f.exists()) {
-                                        Files.copy(getResourceAsStream("config.yml"), f.toPath());
-                                    }
-                                    Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
-                                    channel = config.getString(channelId);
+                                    channel = config.getString(channelId + ".id");
                                 default:
                                     found = false;
                                     for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
@@ -111,12 +119,12 @@ public class Main extends Plugin implements Listener {
                             if (!found) {
                                 ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
                             }
-                            getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + user + ": " + message);
+                            getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
                             result = "";
-                        } else if (tokens[7].contains("command=%2Frun") && tokens[6].replace("user_name=", "").equalsIgnoreCase("Cux")) {
+                        } else if (tokens[7].contains("command=%2Frun") && config.getString(tokens[6].replace("user_name=", "") + ".tag") != null && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
                             ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
                             result = "Ran command /" + decodeMessage(tokens[8]);
-                        } else if (tokens[7].contains("command=%2Flog")) {
+                        } else if (tokens[7].contains("command=%2Flog") && !config.getString(tokens[6].replace("user_name=", "") + ".tag").equals("") && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
                             int lines = isInteger(decodeMessage(tokens[8]), 10) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
                             result = tail(new File(ProxyServer.getInstance().getPluginsFolder().getParent(), "proxy.log.0"), lines);
                         } else if (tokens[7].contains("command=%2Flist")) {
@@ -163,13 +171,11 @@ public class Main extends Plugin implements Listener {
     @EventHandler
     public void onPlayerJoin(PostLoginEvent event) {
         postPayload("_joined the game_", event.getPlayer().getName(), "globalchat");
-        logAttendance(event.getPlayer().getName(), "1");
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerDisconnectEvent event) {
         postPayload("_left the game_", event.getPlayer().getName(), "globalchat");
-        logAttendance(event.getPlayer().getName(), "0");
     }
 
     @EventHandler
@@ -250,55 +256,13 @@ public class Main extends Plugin implements Listener {
         }
     }
 
-    public void logAttendance(String name, String IO) {
-        if (!getConfig().getString(name.toLowerCase()).equals("")) {
-            String form = "126NnT3lEnaHUBD-mEICj0ereHJ3lIioFI2F2OsUqXC4";
-            String month = "" + LocalDateTime.now().getMonthValue();
-            String day = "" + LocalDateTime.now().getDayOfMonth();
-            String year = "" + LocalDateTime.now().getYear();
-            String hour = "" + LocalDateTime.now().getHour();
-            String minute = "" + LocalDateTime.now().getMinute();
-            runCommand("curl 'https://docs.google.com/forms/d/" + form + "/formResponse' " +
-                    "-H 'Host: docs.google.com' -H 'User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' " +
-                    "-H 'Accept-Language: nl,en-us;q=0.7,en;q=0.3' -H 'Accept-Encoding: gzip, deflate' -H 'DNT: 1' " +
-                    "-H 'Referer: https://docs.google.com/forms/d/" + form + "/viewform' " +
-                    "-H 'Cookie: GDS_PREF=hl=en_US; __utma=184632636.34...1517515.2; PREF=ID=4922e3....:FF=0:LD=nl:TM=1380883655:LM=1381731571:S=JvyU_OhlkQ7rE3x3; NID=67=hy29...sglz4PVeS53BZ4eLkYK_wDm9-jmdj7apqNZv6rEwUPDobxjagtLN5gpl4A7v0oA' " +
-                    "-H 'Connection: keep-alive' " +
-                    "-H 'Content-Type: application/x-www-form-urlencoded' " +
-                    "--data 'entry.324043662='" + name + "'&entry.1069936891='" + IO + "'&entry.1717374858='" + month + "'&entry.555297325='" + day + "'&entry.1020866769='" + year + "'&entry.1208667130='" + hour + "'&entry.2011924973='" + minute + "'&draftResponse=%5B%5D%0D%0A&pageHistory=0&fbzx=-5804634750901421753'");
-        }
+    public String formatMsg(String msg, String player) {
+        return ChatColor.GRAY + "[S] " + ChatColor.translateAlternateColorCodes('&', config.getString(player.toLowerCase() + ".tag")) + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg;
     }
 
     public void broadcastServer(String msg, String player, String serverName) {
         for (ProxiedPlayer p : ProxyServer.getInstance().getServerInfo(serverName).getPlayers()) {
-            String tag = "";
-            String name = player;
-            switch (player) {
-                case "cux":
-                    tag = "" + ChatColor.GOLD + ChatColor.BOLD + "Owner";
-                    name = ChatColor.BLUE + "Cux";
-                    break;
-                case "jo_dan":
-                    tag = ChatColor.DARK_GREEN + "Builder";
-                    name = ChatColor.GREEN + "Jo_Dan";
-                    break;
-                case "sandwichoverdose":
-                    tag = "" + ChatColor.GOLD + ChatColor.BOLD + "Owner";
-                    name = "SandwichOverdose";
-                    break;
-                case "blitzkim2":
-                    tag = ChatColor.DARK_RED + "Admin";
-                    name = "Blitzkim2";
-                    break;
-                case "major_dork":
-                    tag = ChatColor.DARK_RED + "Admin";
-                    name = "Major_Dork";
-                    break;
-                case "joheinous":
-                    name = "Joheinous";
-                    break;
-            }
-            p.sendMessage(ChatColor.GRAY + "[S] " + ChatColor.DARK_GRAY + "[" + tag + ChatColor.DARK_GRAY + "] " + name + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg);
+            p.sendMessage(formatMsg(msg, player));
         }
     }
 
@@ -312,8 +276,8 @@ public class Main extends Plugin implements Listener {
             int i = 0;
             for (String word : words) {
                 if (word.startsWith("@")) {
-                    if (!getConfig().getString(word.substring(1).toLowerCase()).equals("")) {
-                        words.set(i, "<" + getConfig().getString(word.substring(1).toLowerCase()) + ">");
+                    if (!config.getString(word.substring(1).toLowerCase() + ".id").equals("")) {
+                        words.set(i, "<" + config.getString(word.substring(1).toLowerCase() + ".id") + ">");
                     }
                 }
                 i++;
@@ -321,8 +285,8 @@ public class Main extends Plugin implements Listener {
             msg = Joiner.on(" ").join(words);
         } else {
             if (msg.startsWith("@")) {
-                if (!getConfig().getString(msg.substring(1).toLowerCase()).equals("")) {
-                    msg = "<" + getConfig().getString(msg.substring(1).toLowerCase()) + ">";
+                if (!config.getString(msg.substring(1).toLowerCase() + ".id").equals("")) {
+                    msg = "<" + config.getString(msg.substring(1).toLowerCase() + ".id") + ">";
                 }
             }
         }
@@ -349,57 +313,6 @@ public class Main extends Plugin implements Listener {
         return URLDecoder.decode(message.replace("text=", "").replace("+", " "), "UTF-8")
                 .replace("&amp;", "").replace("&lt;", "<").replace("&gt;", ">")
                 .replaceFirst("(<(?=https?://[^\\|]+))|(\\|[^>]+>)", "");
-    }
-
-    public Configuration getConfig() {
-        if (!getDataFolder().exists()) {
-            if (!getDataFolder().mkdir()) {
-                getLogger().warning("Unable to create config folder!");
-            }
-        }
-        File f = new File(getDataFolder(), "config.yml");
-        if (!f.exists()) {
-            try {
-                Files.copy(getResourceAsStream("config.yml"), f.toPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            return ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public void runCommand(final String command) {
-        final Plugin plugin = this;
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, new Runnable() {
-            @Override
-            public void run() {
-                File wd = new File("/bin");
-                Process proc = null;
-                try {
-                    proc = Runtime.getRuntime().exec("/bin/bash", null, wd);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (proc != null) {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-                    PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(proc.getOutputStream())), true);
-                    out.println(command);
-                    try {
-                        proc.waitFor();
-                        in.close();
-                        out.close();
-                        proc.destroy();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
     }
 
     public String tail(File file, int lines) {

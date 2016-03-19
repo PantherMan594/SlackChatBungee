@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.cubexmc</groupId>
     <artifactId>SlackChatBungee</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <name>SlackChatBungee</name>
     <description>Slack hook for Minecraft. By PantherMan594. (c) CubeXMC Network.</description>
     <properties>
@@ -79,6 +79,16 @@
                                     </includes>
                                 </filter>
                             </filters>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>net.cubexmc.resources.org.apache</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>mozilla</pattern>
+                                    <shadedPattern>net.cubexmc.resources.mozilla</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>

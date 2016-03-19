@@ -1,7 +1,17 @@
-cux: '@U038KRF3V'
-jo_dan: '@U04BQ43SY'
-sandwichoverdose: '@U050J1WG9'
-blitzkim2: '@U040T35AF'
-major_dork: '@U040PUM2M'
-joheinous: '@U040YTX7A'
-everyone: '!everyone'
+cux:
+  tag: '&8[&6&lOwner&8] &9Cux'
+  id: '@U038KRF3V'
+jo_dan:
+  tag: '&8[&6&lOwner&8] &aJo_Dan'
+  id: '@U04BQ43SY'
+englishcolumbia:
+  tag: '&8[&6&lOwner&8] &9Alian'
+  id: '@U0KJSR7S4'
+blitzkim2:
+  tag: '&&8[4Admin&8] &d&k2&bBlitz&cSolo&d&k2'
+  id: '@U040T35AF'
+joheinous:
+  tag: '&fJoheinous'
+  id: '@U040YTX7A'
+everyone:
+  id: '!everyone'
