@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
-class Main extends Plugin implements Listener {
+public class Main extends Plugin implements Listener {
 
     private static ServerSocket serverSocket;
     private static DefaultHttpServerConnection conn;
