@@ -120,7 +120,7 @@ public class Main extends Plugin implements Listener {
                         result = "";
                     } else if (tokens[7].contains("command=%2Frun") && config.getString(tokens[6].replace("user_name=", "") + ".tag") != null && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
                         ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
-                        postPayload(decodeMessage(tokens[8]), tokens[6].replace("user_name=", ""), "staffchat");
+                        postPayload(decodeMessage(tokens[8]), "/" + tokens[6].replace("user_name=", ""), "staffchat");
                         result = "Ran command /" + decodeMessage(tokens[8]);
                     } else if (tokens[7].contains("command=%2Flog") && !config.getString(tokens[6].replace("user_name=", "") + ".tag").equals("") && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
                         int lines = isInteger(decodeMessage(tokens[8]), 10) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
