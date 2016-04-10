@@ -151,7 +151,7 @@ public class Main extends Plugin implements Listener {
     }
 
     @EventHandler
-    void onStaffChat(StaffChatEvent event) {
+    public void onStaffChat(StaffChatEvent event) {
         if (!event.getServer().equals("VOTE")) {
             if (!(event.getMessage().contains("is suspected for") || event.getMessage().contains("may be hacking ("))) {
                 postPayload(event.getMessage(), event.getSender(), "staffchat");
@@ -162,27 +162,27 @@ public class Main extends Plugin implements Listener {
     }
 
     @EventHandler
-    void onGlobalChat(GlobalChatEvent event) {
+    public void onGlobalChat(GlobalChatEvent event) {
         postPayload(event.getMessage(), event.getSender(), "globalchat");
     }
 
     @EventHandler
-    void onPlayerJoin(PostLoginEvent event) {
+    public void onPlayerJoin(PostLoginEvent event) {
         postPayload("_joined the game_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
-    void onPlayerQuit(PlayerDisconnectEvent event) {
+    public void onPlayerQuit(PlayerDisconnectEvent event) {
         postPayload("_left the game_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
-    void onServerSwitch(ServerSwitchEvent event) {
+    public void onServerSwitch(ServerSwitchEvent event) {
         postPayload("_switched to " + event.getPlayer().getServer().getInfo().getName() + "_", event.getPlayer().getName(), "globalchat");
     }
 
     @EventHandler
-    void onPlayerChat(ChatEvent event) {
+    public void onPlayerChat(ChatEvent event) {
         ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
         postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
     }
