@@ -95,33 +95,37 @@ public class Main extends Plugin implements Listener {
                         String channel = tokens[4].replace("channel_name=", "");
                         String user = tokens[6].replace("user_name=", "");
                         String message = decodeMessage(tokens[8]);
-                        boolean found = true;
-                        switch (channel) {
-                            case "staffchat":
-                                ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
-                                break;
-                            case "globalchat":
-                                ProxyServer.getInstance().getPluginManager().callEvent(new GlobalChatEvent("SLACK", user, message));
-                                break;
-                            case "privategroup":
-                                String channelId = tokens[3].replace("channel_id=", "");
-                                channel = config.getString(channelId + ".id");
-                            default:
-                                found = false;
-                                for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
-                                    if (info.getName().equalsIgnoreCase(channel)) {
-                                        broadcastServer(message, user, info.getName());
-                                        postPayload(message, user, info.getName());
-                                        found = true;
-                                        break;
+                        if (message.startsWith("(a) ")) {
+                            postPayload(message.substring(4), "Anonymous", "staffchat", false);
+                        } else {
+                            boolean found = true;
+                            switch (channel) {
+                                case "staffchat":
+                                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
+                                    break;
+                                case "globalchat":
+                                    ProxyServer.getInstance().getPluginManager().callEvent(new GlobalChatEvent("SLACK", user, message));
+                                    break;
+                                case "privategroup":
+                                    String channelId = tokens[3].replace("channel_id=", "");
+                                    channel = config.getString(channelId + ".id");
+                                default:
+                                    found = false;
+                                    for (ServerInfo info : ProxyServer.getInstance().getServers().values()) {
+                                        if (info.getName().equalsIgnoreCase(channel)) {
+                                            broadcastServer(message, user, info.getName());
+                                            postPayload(message, user, info.getName());
+                                            found = true;
+                                            break;
+                                        }
                                     }
-                                }
-                                break;
+                                    break;
+                            }
+                            if (!found) {
+                                ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
+                            }
+                            getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
                         }
-                        if (!found) {
-                            ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
-                        }
-                        getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
                         result = "";
                     } else if (tokens[7].contains("command=%2Frun") && config.getString(tokens[6].replace("user_name=", "") + ".tag") != null && config.getString(tokens[6].replace("user_name=", "") + ".tag").contains("Owner")) {
                         ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), decodeMessage(tokens[8]));
