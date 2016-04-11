@@ -30,14 +30,19 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -291,7 +296,17 @@ public class Main extends Plugin implements Listener {
             HttpPost request = new HttpPost("https://hooks.slack.com/services/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");
             StringEntity params;
             if (icon) {
-                params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"https://cravatar.eu/helmavatar//" + player + "/100.png\", \"text\": \"" + msg + "\"}");
+                long purgeTime = System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000);
+                File image = new File("/var/www/images/avatars/" + player.toLowerCase() + ".png");
+                if (!image.exists() || image.lastModified() < purgeTime) {
+                    URL website = new URL("https://cravatar.eu/helmavatar/" + player.toLowerCase() + "/100.png");
+                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    FileOutputStream fos = new FileOutputStream(image);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                }
+                String url = UUID.randomUUID().toString().split("-")[0] + "-i.cubexmc.net/avatars/" + player.toLowerCase() + ".png";
+                getLogger().info(url);
+                params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"" + url + "\", \"text\": \"" + msg + "\"}");
             } else {
                 params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"text\": \"" + msg + "\"}");
             }
