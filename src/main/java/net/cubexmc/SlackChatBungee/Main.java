@@ -156,7 +156,6 @@ public class Main extends Plugin implements Listener {
                 }
             }
         }, 0, TimeUnit.SECONDS);
-        scheduleVote(false);
     }
 
     @EventHandler
@@ -203,19 +202,6 @@ public class Main extends Plugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void scheduleVote(final boolean done) {
-        ProxyServer.getInstance().getScheduler().schedule(this, () -> {
-            if (java.time.LocalTime.now().getHour() == 19 && java.time.LocalTime.now().getMinute() == 0) {
-                if (!done) {
-                    ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("VOTE", "Vote", "@everyone Vote now at http://cubexmc.net/?a=vote!"));
-                }
-                scheduleVote(true);
-            } else {
-                scheduleVote(false);
-            }
-        }, 15, TimeUnit.SECONDS);
     }
 
     private String getList() {
