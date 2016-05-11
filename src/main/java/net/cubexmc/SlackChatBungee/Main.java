@@ -191,8 +191,11 @@ public class Main extends Plugin implements Listener {
 
     @EventHandler
     public void onPlayerChat(ChatEvent event) {
-        ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
-        postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
+        //todo Remove cs_triggerinterface check with new server
+        if (!event.getMessage().startsWith("/cs_triggerinterface")) {
+            ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
+            postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
+        }
     }
 
     @Override
