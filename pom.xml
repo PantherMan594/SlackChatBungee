@@ -3,11 +3,11 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>net.cubexmc</groupId>
+    <groupId>io.thejunct</groupId>
     <artifactId>SlackChatBungee</artifactId>
     <version>1.2</version>
     <name>SlackChatBungee</name>
-    <description>Slack hook for Minecraft. By PantherMan594. (c) CubeXMC Network.</description>
+    <description>Slack hook for Minecraft. By PantherMan594. (c) The Junction Network.</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <bungee.version>1.9-SNAPSHOT</bungee.version>
@@ -111,6 +111,13 @@
             <artifactId>bungeecord-api</artifactId>
             <version>${bungee.version}</version>
             <type>jar</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>${bungee.version}</version>
+            <type>javadoc</type>
             <scope>provided</scope>
         </dependency>
         <dependency>

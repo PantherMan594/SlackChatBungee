@@ -1,4 +1,4 @@
-package net.cubexmc.SlackChatBungee;
+package io.thejunct.SlackChatBungee;
 
 import com.google.common.base.Joiner;
 import com.pantherman594.gssentials.PlayerData;
@@ -297,7 +297,7 @@ public class Main extends Plugin implements Listener {
                     FileOutputStream fos = new FileOutputStream(image);
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                 }
-                String url = UUID.randomUUID().toString().split("-")[0] + "-i.cubexmc.net/avatars/" + player.toLowerCase() + ".png";
+                String url = UUID.randomUUID().toString().split("-")[0] + "-i.thejunct.io/avatars/" + player.toLowerCase() + ".png";
                 getLogger().info(url);
                 params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"" + url + "\", \"text\": \"" + msg + "\"}");
             } else {
