@@ -1,14 +1,26 @@
-cux:
-  tag: '&8[&6&lOwner&8] &9Cux'
-  id: '@U038KRF3V'
-jo_dan:
-  tag: '&8[&6&lOwner&8] &aJo_Dan'
-  id: '@U04BQ43SY'
-blitzkim2:
-  tag: '&&8[4Admin&8] &d&k2&bBlitz&cSolo&d&k2'
-  id: '@U040T35AF'
-joheinous:
-  tag: '&fJoheinous'
-  id: '@U040YTX7A'
+# Setup instructions:
+# 1. Go to https://yourteam.slack.com/apps/manage/custom-integrations
+# 2. Create a new incoming webhook.
+# 3. Find "Post to Channel" under "Integration Settings" and set it to your staff chat channel
+# 4. Paste the link next to "Webhook URL" below for "slackurl"
+# 5. (Optionally) configure other things, then click "Save Settings"
+# 6. Go back and create a new slash command.
+# 7. Set the command to /say
+# 8. Set the url to http://your.server.ip:port (port as set below
+# 9. (Optionally) configure other things, then click "Save Integration"
+# 10. Repeat steps 6-9 with the commands /list, /log, and /run, as you wish
+
+port: 0 # Select any open port
+slackurl: 'Your Webhook URL'
+
+# Example user entry:
+# cux:
+#   tag: '&8[&6&lOwner&8] &9Cux'  The prefix for when the player chats
+#   id: '@U038KRF3V'  To find this go to https://yourteam.slack.com/admin, use inspect element on the user's name, and look up for a data-member-id entry
+#   say: true  Permission to /say <message> (from Slack)
+#   list: true  Permission to /list (from Slack)
+#   log: true  Permission to /log [num lines] (from Slack)
+#   run: true  Permission to /run <command> (command is run as console, from Slack)
+
 everyone:
   id: '!everyone'

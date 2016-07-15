@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.thejunct</groupId>
     <artifactId>SlackChatBungee</artifactId>
-    <version>1.2</version>
+    <version>1.3</version>
     <name>SlackChatBungee</name>
     <description>Slack hook for Minecraft. By PantherMan594. (c) The Junction Network.</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bungee.version>1.9-SNAPSHOT</bungee.version>
+        <bungee.version>1.10-SNAPSHOT</bungee.version>
     </properties>
     <build>
         <defaultGoal>clean package</defaultGoal>
