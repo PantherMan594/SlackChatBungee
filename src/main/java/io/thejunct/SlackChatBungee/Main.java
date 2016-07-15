@@ -59,7 +59,7 @@ public class Main extends Plugin implements Listener {
     public void onEnable() {
         if (!getDataFolder().exists()) {
             if (!getDataFolder().mkdir()) {
-                getLogger().warning("Unable to create config folder!");
+                getLogger().log(Level.WARNING, "Unable to create config folder!");
             }
         }
         File f = new File(getDataFolder(), "config.yml");
@@ -74,7 +74,7 @@ public class Main extends Plugin implements Listener {
         try {
             int port = config.getInt("port");
             if (port == 0) {
-                getLogger().warning("Please configure a port and url. Plugin disabling...");
+                getLogger().log(Level.WARNING, "Please configure a port and url. Plugin disabling...");
                 return;
             }
             serverSocket = new ServerSocket(port);
@@ -128,7 +128,9 @@ public class Main extends Plugin implements Listener {
                                 if (!found) {
                                     ProxyServer.getInstance().getPluginManager().callEvent(new StaffChatEvent("SLACK", user, message));
                                 }
-                                getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
+                                if (config.getBoolean("logmsg")) {
+                                    getLogger().log(Level.INFO, "[SLACK - " + channel + "] " + formatMsg(message, user));
+                                }
                             }
                             result = "";
                         } else {

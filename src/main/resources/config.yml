@@ -12,6 +12,7 @@
 
 port: 0 # Select any open port
 slackurl: 'Your Webhook URL'
+logmsg: false
 
 # Example user entry:
 # cux:
