@@ -1,4 +1,4 @@
-package io.thejunct.SlackChatBungee;
+package com.pantherman594.SlackChatBungee;
 
 import com.google.common.base.Joiner;
 import com.pantherman594.gssentials.PlayerData;
@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
-public class Main extends Plugin implements Listener {
+public class SlackChatBungee extends Plugin implements Listener {
 
     private static ServerSocket serverSocket;
     private static DefaultHttpServerConnection conn;

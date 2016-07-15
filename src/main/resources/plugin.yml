@@ -1,5 +1,5 @@
 name: SlackChatBungee
-main: io.thejunct.SlackChatBungee.Main
+main: com.pantherman594.SlackChatBungee.SlackChatBungee
 description: Slack hook for Minecraft. By PantherMan594. (c) The Junction Network.
 version: #VERSION#
 author: PantherMan594
