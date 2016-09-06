@@ -1,5 +1,5 @@
 # Setup instructions:
-# 1. Go to https://yourteam.slack.com/apps/manage/custom-integrations
+# 1. Go to https://[yourteam].slack.com/apps
 # 2. Create a new incoming webhook.
 # 3. Find "Post to Channel" under "Integration Settings" and set it to your staff chat channel
 # 4. Paste the link next to "Webhook URL" below for "slackurl"
@@ -17,7 +17,7 @@ logmsg: false
 # Example user entry:
 # cux:
 #   tag: '&8[&6&lOwner&8] &9Cux'  The prefix for when the player chats
-#   id: '@U038KRF3V'  To find this go to https://yourteam.slack.com/admin, use inspect element on the user's name, and look up for a data-member-id entry
+#   id: '@U038KRF3V'  To find this go to https://[yourteam].slack.com/admin, use inspect element on the user's name, and look up for a data-member-id entry
 #   say: true  Permission to /say <message> (from Slack)
 #   list: true  Permission to /list (from Slack)
 #   log: true  Permission to /log [num lines] (from Slack)

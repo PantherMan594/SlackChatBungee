@@ -49,8 +49,7 @@ import java.util.logging.Level;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class SlackChatBungee extends Plugin implements Listener {
 
-    private static ServerSocket serverSocket;
-    private static DefaultHttpServerConnection conn;
+    private ServerSocket serverSocket;
     private HttpParams params = new BasicHttpParams();
     private HttpRequest request;
     private Configuration config;
@@ -83,10 +82,9 @@ public class SlackChatBungee extends Plugin implements Listener {
             e.printStackTrace();
         }
         ProxyServer.getInstance().getPluginManager().registerListener(this, this);
-        conn = new DefaultHttpServerConnection();
         ProxyServer.getInstance().getScheduler().schedule(this, () -> {
             while (!serverSocket.isClosed()) {
-                try {
+                try (DefaultHttpServerConnection conn = new DefaultHttpServerConnection()) {
                     conn.bind(serverSocket.accept(), params);
                     request = conn.receiveRequestHeader();
                     conn.receiveRequestEntity((HttpEntityEnclosingRequest) request);
@@ -164,16 +162,9 @@ public class SlackChatBungee extends Plugin implements Listener {
                     }
                     conn.sendResponseHeader(response);
                     conn.sendResponseEntity(response);
-                    conn.close();
                     getLogger().log(Level.CONFIG, Arrays.toString(tokens));
                 } catch (Exception e) {
-                    try {
-                        e.printStackTrace();
-                        if (conn.isOpen()) {
-                            conn.close();
-                        }
-                    } catch (Exception ignored) {
-                    }
+                    e.printStackTrace();
                 }
             }
         }, 0, TimeUnit.SECONDS);
@@ -275,55 +266,58 @@ public class SlackChatBungee extends Plugin implements Listener {
         postPayload(msg, player, serverName, true);
     }
 
-    private void postPayload(String msg, String player, String serverName, boolean icon) {
-        if (msg.contains(" ")) {
-            List<String> words = Arrays.asList(msg.split(" "));
-            int i = 0;
-            for (String word : words) {
-                if (word.startsWith("@")) {
-                    if (!config.getString(word.substring(1).toLowerCase() + ".id").equals("")) {
-                        words.set(i, "<" + config.getString(word.substring(1).toLowerCase() + ".id") + ">");
+    private void postPayload(final String message, String player, String serverName, boolean icon) {
+        ProxyServer.getInstance().getScheduler().runAsync(this, () -> {
+            String msg = message;
+            if (msg.contains(" ")) {
+                List<String> words = Arrays.asList(msg.split(" "));
+                int i = 0;
+                for (String word : words) {
+                    if (word.startsWith("@")) {
+                        if (!config.getString(word.substring(1).toLowerCase() + ".id").equals("")) {
+                            words.set(i, "<" + config.getString(word.substring(1).toLowerCase() + ".id") + ">");
+                        }
                     }
+                    i++;
                 }
-                i++;
-            }
-            msg = Joiner.on(" ").join(words);
-        } else {
-            if (msg.startsWith("@")) {
-                if (!config.getString(msg.substring(1).toLowerCase() + ".id").equals("")) {
-                    msg = "<" + config.getString(msg.substring(1).toLowerCase() + ".id") + ">";
-                }
-            }
-        }
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        msg = msg.replace("\"", "\\\"").replace("&", "%26");
-        try {
-            HttpPost request = new HttpPost(config.getString("slackurl"));
-            StringEntity params;
-            if (icon) {
-                String url = "https://cravatar.eu/helmavatar/" + player.toLowerCase() + "/100.png";
-                if (config.getBoolean("isJunct")) {
-                    long purgeTime = System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000);
-                    File image = new File("/var/www/images/avatars/" + player.toLowerCase() + ".png");
-                    if (!image.exists() || image.lastModified() < purgeTime) {
-                        URL website = new URL(url);
-                        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                        FileOutputStream fos = new FileOutputStream(image);
-                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    }
-                    url = UUID.randomUUID().toString().split("-")[0] + "-i.thejunct.io/avatars/" + player.toLowerCase() + ".png";
-                }
-                params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"" + url + "\", \"text\": \"" + msg + "\"}");
+                msg = Joiner.on(" ").join(words);
             } else {
-                params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"text\": \"" + msg + "\"}");
+                if (msg.startsWith("@")) {
+                    if (!config.getString(msg.substring(1).toLowerCase() + ".id").equals("")) {
+                        msg = "<" + config.getString(msg.substring(1).toLowerCase() + ".id") + ">";
+                    }
+                }
             }
-            request.addHeader("content-type", "application/x-www-form-urlencoded");
-            request.setEntity(params);
-            httpClient.execute(request);
-            httpClient.getConnectionManager().shutdown();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            msg = msg.replace("\"", "\\\"").replace("&", "%26");
+            try {
+                HttpPost request = new HttpPost(config.getString("slackurl"));
+                StringEntity params;
+                if (icon) {
+                    String url = "https://cravatar.eu/helmavatar/" + player.toLowerCase() + "/100.png";
+                    if (config.getBoolean("isJunct")) {
+                        long purgeTime = System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000);
+                        File image = new File("/var/www/images/avatars/" + player.toLowerCase() + ".png");
+                        if (!image.exists() || image.lastModified() < purgeTime) {
+                            URL website = new URL(url);
+                            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                            FileOutputStream fos = new FileOutputStream(image);
+                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                        }
+                        url = UUID.randomUUID().toString().split("-")[0] + "-i.thejunct.io/avatars/" + player.toLowerCase() + ".png";
+                    }
+                    params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"icon_url\": \"" + url + "\", \"text\": \"" + msg + "\"}");
+                } else {
+                    params = new StringEntity("payload={\"channel\": \"#" + serverName + "\", \"username\": \"" + player + "\", \"text\": \"" + msg + "\"}");
+                }
+                request.addHeader("content-type", "application/x-www-form-urlencoded");
+                request.setEntity(params);
+                httpClient.execute(request);
+                httpClient.getConnectionManager().shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private String decodeMessage(String message) throws UnsupportedEncodingException {
