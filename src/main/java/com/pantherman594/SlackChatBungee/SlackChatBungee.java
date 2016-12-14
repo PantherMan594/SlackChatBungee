@@ -1,10 +1,11 @@
 package com.pantherman594.SlackChatBungee;
 
 import com.google.common.base.Joiner;
-import com.pantherman594.gssentials.PlayerData;
+import com.pantherman594.gssentials.BungeeEssentials;
 import com.pantherman594.gssentials.event.GlobalChatEvent;
 import com.pantherman594.gssentials.event.StaffChatEvent;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -12,6 +13,7 @@ import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
+import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -46,7 +48,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-@SuppressWarnings("ResultOfMethodCallIgnored")
+@SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
 public class SlackChatBungee extends Plugin implements Listener {
 
     private ServerSocket serverSocket;
@@ -61,15 +63,7 @@ public class SlackChatBungee extends Plugin implements Listener {
                 getLogger().log(Level.WARNING, "Unable to create config folder!");
             }
         }
-        File f = new File(getDataFolder(), "config.yml");
-        try {
-            if (!f.exists()) {
-                Files.copy(getResourceAsStream("config.yml"), f.toPath());
-            }
-            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        reload();
         try {
             int port = config.getInt("port");
             if (port == 0) {
@@ -81,6 +75,7 @@ public class SlackChatBungee extends Plugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new ReloadCommand());
         ProxyServer.getInstance().getPluginManager().registerListener(this, this);
         ProxyServer.getInstance().getScheduler().schedule(this, () -> {
             while (!serverSocket.isClosed()) {
@@ -144,7 +139,7 @@ public class SlackChatBungee extends Plugin implements Listener {
                         }
                     } else if (tokens[7].contains("command=%2Flog")) {
                         if (config.getBoolean(tokens[6].replace("user_name=", "") + ".log")) {
-                            int lines = isInteger(decodeMessage(tokens[8]), 10) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
+                            int lines = isInteger(decodeMessage(tokens[8])) ? Integer.valueOf(decodeMessage(tokens[8])) : 10;
                             result = tail(new File(ProxyServer.getInstance().getPluginsFolder().getParent(), "proxy.log.0"), lines);
                         } else {
                             result = "You don't have permission to use /log.";
@@ -237,7 +232,7 @@ public class SlackChatBungee extends Plugin implements Listener {
                 } else {
                     names += ", " + p.getName();
                 }
-                if (PlayerData.getData(p.getUniqueId()).isHidden()) {
+                if (BungeeEssentials.getInstance().getPlayerData().isHidden(p.getUniqueId().toString())) {
                     names += "[Hidden]";
                 }
                 num++;
@@ -323,7 +318,7 @@ public class SlackChatBungee extends Plugin implements Listener {
     private String decodeMessage(String message) throws UnsupportedEncodingException {
         return URLDecoder.decode(message.replace("text=", "").replace("+", " "), "UTF-8")
                 .replace("&amp;", "").replace("&lt;", "<").replace("&gt;", ">")
-                .replaceFirst("(<(?=https?://[^\\|]+))|(\\|[^>]+>)", "");
+                .replaceFirst("(<(?=https?://[^|]+))|(\\|[^>]+>)", "");
     }
 
     private String tail(File file, int lines) {
@@ -355,9 +350,6 @@ public class SlackChatBungee extends Plugin implements Listener {
             }
 
             return sb.reverse().toString();
-        } catch (java.io.FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
         } catch (java.io.IOException e) {
             e.printStackTrace();
             return null;
@@ -371,15 +363,39 @@ public class SlackChatBungee extends Plugin implements Listener {
         }
     }
 
-    private boolean isInteger(String s, int radix) {
+    private boolean isInteger(String s) {
         if (s.isEmpty()) return false;
         for (int i = 0; i < s.length(); i++) {
             if (i == 0 && s.charAt(i) == '-') {
                 if (s.length() == 1) return false;
                 else continue;
             }
-            if (Character.digit(s.charAt(i), radix) < 0) return false;
+            if (Character.digit(s.charAt(i), 10) < 0) return false;
         }
         return true;
+    }
+
+    private void reload() {
+        File f = new File(getDataFolder(), "config.yml");
+        try {
+            if (!f.exists()) {
+                Files.copy(getResourceAsStream("config.yml"), f.toPath());
+            }
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(f);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public class ReloadCommand extends Command {
+
+        ReloadCommand() {
+            super("scbreload", "scb.reload", "scb");
+        }
+
+        @Override
+        public void execute(CommandSender commandSender, String[] strings) {
+            reload();
+        }
     }
 }
