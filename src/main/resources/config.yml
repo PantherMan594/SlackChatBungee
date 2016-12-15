@@ -25,3 +25,7 @@ logmsg: false
 
 everyone:
   id: '!everyone'
+
+blacklist:
+- '\/login.*'
+- '\/register.*'

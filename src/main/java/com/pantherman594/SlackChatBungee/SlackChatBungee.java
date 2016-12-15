@@ -193,6 +193,11 @@ public class SlackChatBungee extends Plugin implements Listener {
     @EventHandler
     public void onPlayerChat(ChatEvent event) {
         ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
+        for (String regex : config.getStringList("blacklist")) {
+            if (event.getMessage().matches(regex)) {
+                return;
+            }
+        }
         postPayload(event.getMessage(), sender.getName(), sender.getServer().getInfo().getName());
     }
 
