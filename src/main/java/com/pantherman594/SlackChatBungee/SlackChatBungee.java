@@ -253,7 +253,7 @@ public class SlackChatBungee extends Plugin implements Listener {
     }
 
     private String formatMsg(String msg, String player) {
-        return ChatColor.GRAY + "[S] " + ChatColor.translateAlternateColorCodes('&', config.getString(player.toLowerCase() + ".tag")) + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg;
+        return ChatColor.translateAlternateColorCodes('&', config.getString(player.toLowerCase() + ".tag")) + ChatColor.DARK_GRAY + ": " + ChatColor.WHITE + msg;
     }
 
     private void broadcastServer(String msg, String player, String serverName) {
