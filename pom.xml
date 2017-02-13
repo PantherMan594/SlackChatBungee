@@ -61,19 +61,19 @@
                             <minimizeJar>true</minimizeJar>
                             <filters>
                                 <filter>
-                                    <artifact>org.apache.httpcomponents:httpclient</artifact>
+                                    <artifact>com.google.api-client:google-api-client</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.apache.httpcomponents:httpcore</artifact>
+                                    <artifact>com.google.oauth-client:google-oauth-client-jetty</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>commons-logging:commons-logging</artifact>
+                                    <artifact>com.google.apis:google-api-services-sheets</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
@@ -81,12 +81,12 @@
                             </filters>
                             <relocations>
                                 <relocation>
-                                    <pattern>org.apache</pattern>
-                                    <shadedPattern>net.cubexmc.resources.org.apache</shadedPattern>
+                                    <pattern>com.google.api</pattern>
+                                    <shadedPattern>com.pantherman594.resources.com.google.api</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>mozilla</pattern>
-                                    <shadedPattern>net.cubexmc.resources.mozilla</shadedPattern>
+                                    <pattern>com.google.oauth</pattern>
+                                    <shadedPattern>com.pantherman594.resources.com.google.oauth</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -128,19 +128,19 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.2</version>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>1.22.0</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>4.4.4</version>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client-jetty</artifactId>
+            <version>1.22.0</version>
         </dependency>
         <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.2</version>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-sheets</artifactId>
+            <version>v4-rev456-1.22.0</version>
         </dependency>
     </dependencies>
 
