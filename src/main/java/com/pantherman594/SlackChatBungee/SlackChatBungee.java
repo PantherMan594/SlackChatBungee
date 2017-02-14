@@ -44,6 +44,15 @@ public class SlackChatBungee extends Plugin implements Listener {
         return config;
     }
 
+    static void saveConfig() {
+        File f = new File(getInstance().getDataFolder(), "config.yml");
+        try {
+            ConfigurationProvider.getProvider(YamlConfiguration.class).save(config, f);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void onEnable() {
         instance = this;

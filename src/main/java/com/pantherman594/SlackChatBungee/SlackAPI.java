@@ -39,9 +39,13 @@ class SlackAPI {
 
     SlackAPI(int port, String url, String clientId, String clientSecret) throws IOException {
         serverSocket = new ServerSocket(port);
-        redirectUri = URLEncoder.encode(url + ":" + port);
+        redirectUri = URLEncoder.encode(url);
         SlackChatBungee.getInstance().getLogger().log(Level.INFO, "[SlackAPI] Connected to port " + port);
-        SlackChatBungee.getInstance().getLogger().log(Level.SEVERE, "\n\nPlease authenticate the application at: " + OAUTH_AUTH + "?client_id=" + clientId + "&scope=users:read&redirect_uri=" + redirectUri + "\n\n");
+        if (SlackChatBungee.getConfig().getString("access token").equals("")) {
+            SlackChatBungee.getInstance().getLogger().log(Level.SEVERE, "\n\nPlease authenticate the application at: " + OAUTH_AUTH + "?client_id=" + clientId + "&scope=users:read+commands&redirect_uri=" + redirectUri + "\n\n");
+        } else {
+            accessToken = SlackChatBungee.getConfig().getString("access token");
+        }
 
         ProxyServer.getInstance().getScheduler().schedule(SlackChatBungee.getInstance(), () -> {
             try {
@@ -49,7 +53,7 @@ class SlackAPI {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }, 15, TimeUnit.MINUTES);
+        }, 0, 15, TimeUnit.MINUTES);
 
         ProxyServer.getInstance().getScheduler().runAsync(SlackChatBungee.getInstance(), () -> {
             while (!serverSocket.isClosed()) {
@@ -71,7 +75,7 @@ class SlackAPI {
                     String[] tokens = line2.split("&");
 
                     String result = "Got it";
-                    if (tokens[0].startsWith("code=")) {
+                    if (accessToken == null && tokens[0].startsWith("code=")) {
                         String code = tokens[0].replace("code=", "");
                         String getUrl = String.format(OAUTH_URL + "?client_id=%s&client_secret=%s&code=%s&redirect_uri=%s", clientId, clientSecret, code, redirectUri);
 
@@ -81,10 +85,12 @@ class SlackAPI {
                         BufferedReader in2 = new BufferedReader(new InputStreamReader(con.getInputStream()));
                         JsonObject json = new Gson().fromJson(in2, JsonObject.class);
                         accessToken = json.get("access_token").getAsString();
+                        SlackChatBungee.getConfig().set("access token", accessToken);
+                        SlackChatBungee.saveConfig();
 
                         checkPresence();
-                    } else if (tokens.length >= 6 && tokens[7].startsWith("command=%2F")) {
-                        switch (tokens[7].replace("command=%2F", "")) {
+                    } else if (tokens.length >= 6 && tokens[7].startsWith("command=/")) {
+                        switch (tokens[7].replace("command=/", "")) {
                             case "say":
                                 String channel = tokens[4].replace("channel_name=", "");
                                 String user = tokens[6].replace("user_name=", "");
